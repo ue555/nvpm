@@ -1,0 +1,72 @@
+{
+  "plugins": [
+    "folke/tokyonight.nvim",
+    "nvim-lua/plenary.nvim",
+
+    {
+      "url": "nvim-telescope/telescope.nvim",
+      "dependencies": [
+        "nvim-lua/plenary.nvim"
+      ]
+    },
+
+    {
+      "url": "nvim-treesitter/nvim-treesitter",
+      "build": ":TSUpdate"
+    },
+
+    "neovim/nvim-lspconfig",
+
+    {
+      "url": "hrsh7th/nvim-cmp",
+      "dependencies": [
+        "hrsh7th/cmp-nvim-lsp",
+        "hrsh7th/cmp-buffer",
+        "hrsh7th/cmp-path",
+        "hrsh7th/cmp-cmdline",
+        "L3MON4D3/LuaSnip",
+        "saadparwaiz1/cmp_luasnip"
+      ]
+    },
+
+    "lewis6991/gitsigns.nvim",
+    "folke/which-key.nvim",
+
+    {
+      "url": "nvim-lualine/lualine.nvim",
+      "dependencies": [
+        "nvim-tree/nvim-web-devicons"
+      ]
+    },
+
+    "nvim-tree/nvim-web-devicons",
+
+    {
+      "url": "nvim-tree/nvim-tree.lua",
+      "dependencies": [
+        "nvim-tree/nvim-web-devicons"
+      ]
+    },
+
+    "windwp/nvim-autopairs",
+    "numToStr/Comment.nvim",
+
+    {
+      "url": "akinsho/bufferline.nvim",
+      "tag": "v4.*",
+      "dependencies": [
+        "nvim-tree/nvim-web-devicons"
+      ]
+    },
+
+    "williamboman/mason.nvim",
+    "williamboman/mason-lspconfig.nvim",
+
+    {
+      "url": "jose-elias-alvarez/null-ls.nvim",
+      "dependencies": [
+        "nvim-lua/plenary.nvim"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "plugins": [
+    "folke/tokyonight.nvim",
+    "nvim-telescope/telescope.nvim",
+    "neovim/nvim-lspconfig",
+    {
+      "url": "hrsh7th/nvim-cmp",
+      "event": ["InsertEnter"],
+      "dependencies": [
+        "L3MON4D3/LuaSnip",
+        "saadparwaiz1/cmp_luasnip"
+      ]
+    },
+    {
+      "url": "nvim-treesitter/nvim-treesitter",
+      "build": ":TSUpdate",
+      "event": ["BufReadPost", "BufNewFile"]
+    },
+    {
+      "url": "lewis6991/gitsigns.nvim",
+      "event": ["BufReadPre"],
+      "config": "require('gitsigns').setup()"
+    },
+    {
+      "url": "folke/which-key.nvim",
+      "event": ["VeryLazy"]
+    }
+  ]
+}
