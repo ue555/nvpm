@@ -20,7 +20,7 @@ go.work
 
 # Build artifacts
 nvpm-lock.json
-cache/
+/cache/
 
 # Editor directories and files
 .vscode/
