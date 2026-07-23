@@ -2,6 +2,12 @@
 
 **nvpm** (Neovim Package Manager) は、Goで書かれたNeovim用の高速なプラグインマネージャーです。
 
+## 名前の由来
+
+**nvpm**は以下の略称です：
+- **nv** = **N**eo**v**im
+- **pm** = **P**ackage **M**anager
+
 ## ✨ 特徴
 
 - 📦 シンプルなJSON設定ファイルで全てのプラグインを管理

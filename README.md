@@ -2,6 +2,12 @@
 
 A modern Neovim plugin manager written in Go.
 
+## Name Origin
+
+**nvpm** stands for:
+- **nv** = **N**eo**v**im
+- **pm** = **P**ackage **M**anager
+
 ## Features
 
 - **Lazy Loading**: Load plugins on-demand based on events, commands, keys, and filetypes
