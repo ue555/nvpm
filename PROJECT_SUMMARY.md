@@ -69,20 +69,28 @@ This is a complete Go implementation of nvpm, a modern plugin manager for Neovim
    - Results aggregation
    - Statistics
 
-9. **lock** (lock/lock.go)
-   - Lockfile management (nvpm-lock.json)
-   - Version pinning
-   - Save/load functionality
-   - Restore operations
+9. **build** (build/build.go)
+   - Executes the `build` field: shell commands via `sh -c`, or `:`-prefixed
+     Neovim Ex commands inside a headless, isolated Neovim instance
+   - Adds the plugin and its dependencies to `runtimepath`
+   - Best-effort `require(<module>).setup({})` for plugins that only
+     register commands inside `setup()`
 
-10. **manager** (manager.go)
+10. **lock** (lock/lock.go)
+    - Lockfile management (nvpm-lock.json)
+    - Version pinning
+    - Save/load functionality
+    - Restore operations
+
+11. **manager** (manager.go)
     - High-level operations (install, update, clean, sync, check, restore)
     - Pipeline orchestration
     - Results reporting
+    - Unused-plugin detection for `clean` via `Config.DetectOrphans()`
 
 ### Public API (pkg/nvpm/)
 
-11. **nvpm** (nvpm.go)
+12. **nvpm** (nvpm.go)
     - Main entry point
     - Setup functionality
     - Public API
@@ -90,7 +98,7 @@ This is a complete Go implementation of nvpm, a modern plugin manager for Neovim
 
 ### CLI Application (cmd/nvpm/)
 
-12. **main** (main.go)
+13. **main** (main.go)
     - Command-line interface
     - Config file loading
     - Command execution
@@ -103,7 +111,8 @@ This is a complete Go implementation of nvpm, a modern plugin manager for Neovim
 - [x] Git-based plugin management
 - [x] Install missing plugins
 - [x] Update installed plugins
-- [x] Clean unused plugins
+- [x] Build command execution (shell commands and headless Neovim Ex commands)
+- [x] Clean unused plugins (disk vs. config comparison)
 - [x] Sync operation (clean + install + update)
 - [x] Check for updates
 - [x] Lockfile support (nvpm-lock.json)
@@ -143,7 +152,8 @@ nvpm/
 │   │   ├── cache/
 │   │   │   └── cache.go           # Caching system
 │   │   ├── config/
-│   │   │   └── config.go          # Configuration
+│   │   │   ├── config.go          # Configuration
+│   │   │   └── config_test.go     # Tests
 │   │   ├── handler/
 │   │   │   ├── handler.go         # Handler framework
 │   │   │   ├── event.go           # Event handler
@@ -156,6 +166,9 @@ nvpm/
 │   │       ├── plugin.go          # Plugin parser
 │   │       └── plugin_test.go     # Tests
 │   ├── manage/
+│   │   ├── build/
+│   │   │   ├── build.go           # Build command execution
+│   │   │   └── build_test.go      # Tests
 │   │   ├── git/
 │   │   │   └── git.go             # Git operations
 │   │   ├── lock/
@@ -165,8 +178,8 @@ nvpm/
 │   │   ├── task/
 │   │   │   └── task.go            # Task system
 │   │   └── manager.go             # Management operations
-│   └── lazy/
-│       └── lazy.go                # Public API
+│   └── nvpm/
+│       └── nvpm.go                # Public API
 ├── examples/
 │   └── config.json                # Example configuration
 ├── ARCHITECTURE.md                # Architecture documentation

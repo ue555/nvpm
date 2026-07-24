@@ -11,7 +11,7 @@ nvpm is a complete reimplementation of nvpm in Go, maintaining the same core con
 ```
 .
 ├── cmd/
-│   └── lazy/           # Main CLI application
+│   └── nvpm/           # Main CLI application
 │       └── main.go     # Entry point
 ├── pkg/
 │   ├── core/           # Core engine
@@ -21,13 +21,14 @@ nvpm is a complete reimplementation of nvpm in Go, maintaining the same core con
 │   │   ├── loader/     # Plugin loading system
 │   │   └── plugin/     # Plugin specification parser
 │   ├── manage/         # Management layer
+│   │   ├── build/      # Build command execution
 │   │   ├── git/        # Git operations
 │   │   ├── lock/       # Lockfile management
 │   │   ├── runner/     # Task runner
 │   │   ├── task/       # Task definitions
 │   │   └── manager.go  # Management operations
-│   └── lazy/           # Main package
-│       └── lazy.go     # Public API
+│   └── nvpm/           # Main package
+│       └── nvpm.go     # Public API
 ├── examples/           # Example configurations
 └── bin/                # Compiled binaries
 ```
@@ -249,7 +250,7 @@ if data, ok := cache.Get("key"); ok {
 **Operations**:
 - `Install`: Install missing plugins
 - `Update`: Update installed plugins
-- `Clean`: Remove unused plugins
+- `Clean`: Remove unused plugins. Before queuing the clean pipeline, `Config.DetectOrphans()` scans the plugin install directory and flags any directory that no longer corresponds to a plugin in the current config (the cache directory is excluded)
 - `Sync`: Clean + Install + Update
 - `Check`: Check for updates
 - `Restore`: Restore from lockfile
@@ -269,11 +270,21 @@ if data, ok := cache.Get("key"); ok {
 **Purpose**: Provides the public API.
 
 **Key Functions**:
-- `New()`: Create a new Lazy instance
+- `New()`: Create a new NVPM instance
 - `Setup(specs, opts)`: Initialize with configuration
 - `Install/Update/Clean/Sync()`: Management operations
 - `Stats()`: Get statistics
 - `Plugins()`: Get all plugins
+
+### 12. Build Runner (`pkg/manage/build`)
+
+**Purpose**: Executes a plugin's `build` command as part of the install/update pipelines.
+
+**Behavior**:
+- A plain string runs as a shell command (`sh -c`) inside the plugin's directory
+- A string prefixed with `:` runs as a Neovim Ex command inside a headless, isolated Neovim instance (`-u NONE -i NONE`), with the plugin and its declared dependencies added to `runtimepath`
+- Since `-u NONE` disables automatic sourcing of `plugin/` scripts, `:runtime! plugin/**/*.vim plugin/**/*.lua` is run first
+- For plugins that only register their commands inside `setup()` (no `plugin/` script), a best-effort `require(<module>).setup({})` is attempted first, guessing the module name from the plugin's `lua/` directory layout
 
 ## Data Flow
 
@@ -282,9 +293,9 @@ if data, ok := cache.Get("key"); ok {
 ```
 main.go
   ↓
-lazy.New()
+nvpm.New()
   ↓
-lazy.Setup(specs, opts)
+nvpm.Setup(specs, opts)
   ├─→ config.Setup(opts)           # Load configuration
   ├─→ cache.Enable()               # Enable cache
   ├─→ plugin.Load(specs)           # Parse plugin specs

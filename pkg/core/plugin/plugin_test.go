@@ -3,7 +3,7 @@ package plugin
 import (
 	"testing"
 
-	"github.com/kouji/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/config"
 )
 
 func TestExtractName(t *testing.T) {

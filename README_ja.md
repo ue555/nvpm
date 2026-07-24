@@ -420,13 +420,13 @@ nvpm -config plugins.json -cmd restore
 自動でnvpmをインストールします：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouji/nvpm/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ue555/nvpm/main/scripts/install.sh | bash
 ```
 
 または手動で：
 
 ```bash
-git clone https://github.com/kouji/nvpm.git
+git clone https://github.com/ue555/nvpm.git
 cd nvpm
 ./scripts/install.sh
 ```

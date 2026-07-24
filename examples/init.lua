@@ -62,15 +62,20 @@ pcall(function()
 end)
 
 -- Treesitter（nvim-treesitterがインストールされている場合）
+-- nvim-treesitterのmainブランチは全面書き換えされており、
+-- 旧API(require('nvim-treesitter.configs').setup{...})は廃止されています。
 pcall(function()
-  require('nvim-treesitter.configs').setup {
-    highlight = {
-      enable = true,
-    },
-    indent = {
-      enable = true,
-    },
-  }
+  local ts_filetypes = { "lua", "vim", "vimdoc", "query" }
+
+  require('nvim-treesitter').install(ts_filetypes)
+
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = ts_filetypes,
+    callback = function()
+      vim.treesitter.start()
+      vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+    end,
+  })
 end)
 
 -- LSP設定（nvim-lspconfigがインストールされている場合）

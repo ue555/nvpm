@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kouji/nvpm/pkg/core/config"
-	"github.com/kouji/nvpm/pkg/manage/git"
+	"github.com/ue555/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/manage/git"
 )
 
 // Lockfile represents the lockfile structure

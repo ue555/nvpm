@@ -46,7 +46,7 @@ pkg/
 
 ```bash
 # Clone the repository
-git clone https://github.com/kouji/nvpm.git
+git clone https://github.com/ue555/nvpm.git
 cd nvpm
 
 # Install dependencies

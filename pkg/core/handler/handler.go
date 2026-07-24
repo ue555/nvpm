@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kouji/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/config"
 )
 
 // Handler represents a lazy-loading trigger handler

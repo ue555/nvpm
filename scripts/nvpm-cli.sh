@@ -65,7 +65,7 @@ warning() {
 # nvpmの存在確認
 check_nvpm() {
     if ! command -v "$NVPM_BIN" &> /dev/null; then
-        error "nvpmが見つかりません。インストールしてください: https://github.com/kouji/nvpm"
+        error "nvpmが見つかりません。インストールしてください: https://github.com/ue555/nvpm"
     fi
 }
 

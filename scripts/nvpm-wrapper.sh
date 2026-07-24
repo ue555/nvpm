@@ -8,7 +8,7 @@ NVPM_BIN="${NVPM_BIN:-nvpm}"
 # nvpmがインストールされているか確認
 if ! command -v "$NVPM_BIN" &> /dev/null; then
     echo "エラー: nvpmが見つかりません"
-    echo "インストール: https://github.com/kouji/nvpm"
+    echo "インストール: https://github.com/ue555/nvpm"
     exit 1
 fi
 

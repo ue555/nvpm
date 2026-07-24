@@ -6,10 +6,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kouji/nvpm/pkg/core/config"
-	"github.com/kouji/nvpm/pkg/manage/build"
-	"github.com/kouji/nvpm/pkg/manage/git"
-	"github.com/kouji/nvpm/pkg/manage/task"
+	"github.com/ue555/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/manage/build"
+	"github.com/ue555/nvpm/pkg/manage/git"
+	"github.com/ue555/nvpm/pkg/manage/task"
 )
 
 // Runner executes task pipelines

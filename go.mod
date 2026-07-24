@@ -1,3 +1,3 @@
-module github.com/kouji/nvpm
+module github.com/ue555/nvpm
 
 go 1.21

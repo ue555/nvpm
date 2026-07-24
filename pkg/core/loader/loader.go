@@ -5,8 +5,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/kouji/nvpm/pkg/core/config"
-	"github.com/kouji/nvpm/pkg/core/handler"
+	"github.com/ue555/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/handler"
 )
 
 // Loader manages plugin loading

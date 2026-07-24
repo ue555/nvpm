@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kouji/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/config"
 )
 
 // entry represents a single cached value

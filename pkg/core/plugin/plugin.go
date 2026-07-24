@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kouji/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/config"
 )
 
 // Spec represents a plugin specification loader

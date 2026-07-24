@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kouji/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/config"
 )
 
 // Builder runs plugin build commands

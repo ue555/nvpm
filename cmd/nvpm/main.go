@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/kouji/nvpm/pkg/core/config"
-	"github.com/kouji/nvpm/pkg/nvpm"
+	"github.com/ue555/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/nvpm"
 )
 
 func main() {

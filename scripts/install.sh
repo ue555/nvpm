@@ -37,7 +37,7 @@ echo "📥 nvpmをダウンロードしています..."
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 
-git clone https://github.com/kouji/nvpm.git
+git clone https://github.com/ue555/nvpm.git
 cd nvpm
 
 # ビルド

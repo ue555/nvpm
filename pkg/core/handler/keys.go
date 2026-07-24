@@ -3,7 +3,7 @@ package handler
 import (
 	"log"
 
-	"github.com/kouji/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/config"
 )
 
 // KeysHandler handles key mapping-based lazy loading

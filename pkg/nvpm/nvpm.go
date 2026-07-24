@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kouji/nvpm/pkg/core/cache"
-	"github.com/kouji/nvpm/pkg/core/config"
-	"github.com/kouji/nvpm/pkg/core/loader"
-	"github.com/kouji/nvpm/pkg/core/plugin"
-	"github.com/kouji/nvpm/pkg/manage"
+	"github.com/ue555/nvpm/pkg/core/cache"
+	"github.com/ue555/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/core/loader"
+	"github.com/ue555/nvpm/pkg/core/plugin"
+	"github.com/ue555/nvpm/pkg/manage"
 )
 
 // NVPM is the main nvpm instance

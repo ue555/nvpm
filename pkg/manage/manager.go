@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kouji/nvpm/pkg/core/config"
-	"github.com/kouji/nvpm/pkg/manage/lock"
-	"github.com/kouji/nvpm/pkg/manage/runner"
-	"github.com/kouji/nvpm/pkg/manage/task"
+	"github.com/ue555/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/manage/lock"
+	"github.com/ue555/nvpm/pkg/manage/runner"
+	"github.com/ue555/nvpm/pkg/manage/task"
 )
 
 // Manager manages plugin operations

@@ -4,6 +4,10 @@
     "nvim-telescope/telescope.nvim",
     "neovim/nvim-lspconfig",
     {
+      "url": "L3MON4D3/LuaSnip",
+      "build": "make install_jsregexp"
+    },
+    {
       "url": "hrsh7th/nvim-cmp",
       "event": ["InsertEnter"],
       "dependencies": [
