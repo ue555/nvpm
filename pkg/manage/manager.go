@@ -112,6 +112,18 @@ func (m *Manager) Update(plugins ...*config.Plugin) error {
 func (m *Manager) Clean() error {
 	log.Println("Starting clean operation")
 
+	// Find plugin directories on disk that are no longer in the config
+	orphans, err := m.Config.DetectOrphans()
+	if err != nil {
+		return fmt.Errorf("failed to detect unused plugins: %w", err)
+	}
+
+	for _, orphan := range orphans {
+		log.Printf("Found unused plugin: %s\n", orphan.Name)
+		m.Config.AddPlugin(orphan)
+		m.Config.ToClean = append(m.Config.ToClean, orphan.Name)
+	}
+
 	r := runner.NewRunner(m.Config)
 
 	// Queue clean pipeline for plugins to clean

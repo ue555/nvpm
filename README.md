@@ -165,7 +165,11 @@ Plugins can be specified as:
 - `tag` (string): Git tag
 - `commit` (string): Git commit hash
 - `version` (string): Semver version
-- `build` (string): Build command to run after install/update
+- `build` (string): Build command to run after install/update. A plain string
+  (e.g. `"make install"`) runs as a shell command inside the plugin's
+  directory. A string prefixed with `:` (e.g. `":TSUpdate"`) runs as a Neovim
+  Ex command inside an isolated, headless Neovim instance with the plugin
+  and its dependencies added to `runtimepath` (see [Build Commands](#build-commands))
 - `config` (string): Configuration function
 - `init` (string): Initialization function (runs before loading)
 - `dev` (bool): Use local development directory
@@ -235,10 +239,38 @@ The cache system stores intermediate results to improve performance:
 4. `build` - Run build command
 
 ### Clean Pipeline
+Before queuing this pipeline, `clean` scans the plugin install directory and
+compares it against the current config: any directory that no longer
+corresponds to a plugin in the config (e.g. it was removed from the JSON
+file) is treated as unused.
+
 1. `remove` - Remove plugin directory
 
 ### Check Pipeline
 1. `check_updates` - Check for available updates
+
+## Build Commands
+
+The `build` field supports two forms:
+
+- **Shell command** (any string not starting with `:`): run via `sh -c` from
+  inside the plugin's directory. Example: `"make install_jsregexp"`.
+- **Neovim Ex command** (a string starting with `:`): run inside a headless,
+  isolated Neovim instance (`-u NONE -i NONE`) with only the plugin's own
+  directory and its declared `dependencies` added to `runtimepath`. Example:
+  `":TSUpdate"`, `":MasonUpdate"`.
+
+Since `-u NONE` also disables automatic sourcing of `plugin/` scripts, nvpm
+explicitly runs `:runtime! plugin/**/*.vim plugin/**/*.lua` first. For
+plugins whose commands are only registered inside `setup()` (e.g.
+`mason.nvim`'s `:MasonUpdate`) rather than a `plugin/` script, nvpm makes a
+best-effort attempt to `require(<module>).setup({})` first, guessing the
+module name from the plugin's `lua/` directory layout.
+
+Note that some plugins gate certain features behind interactive/headless
+detection (e.g. `mason-lspconfig.nvim`'s `ensure_installed` intentionally
+skips auto-install when Neovim is running headless), which is outside of
+nvpm's control.
 
 ## Inspiration
 

@@ -205,6 +205,40 @@ func (c *Config) GetPlugin(name string) (*Plugin, bool) {
 	return plugin, ok
 }
 
+// DetectOrphans finds plugin directories under Root that no longer
+// correspond to any plugin in the current configuration (e.g. after a
+// plugin was removed from the config file), returning a synthetic Plugin
+// for each one so it can be queued for removal.
+func (c *Config) DetectOrphans() ([]*Plugin, error) {
+	entries, err := os.ReadDir(c.Root)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	expected := make(map[string]bool, len(c.Plugins))
+	for _, p := range c.Plugins {
+		expected[p.Dir] = true
+	}
+	cacheDir := filepath.Base(c.Performance.Cache.Path)
+
+	var orphans []*Plugin
+	for _, e := range entries {
+		if !e.IsDir() || e.Name() == cacheDir || expected[e.Name()] {
+			continue
+		}
+		orphans = append(orphans, &Plugin{
+			Name:      e.Name(),
+			Dir:       e.Name(),
+			Installed: true,
+		})
+	}
+
+	return orphans, nil
+}
+
 // NormalizeURL converts short URLs to full git URLs
 func (c *Config) NormalizeURL(url string) string {
 	// If it's already a full URL, return as-is

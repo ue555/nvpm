@@ -3,9 +3,11 @@ package runner
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/kouji/nvpm/pkg/core/config"
+	"github.com/kouji/nvpm/pkg/manage/build"
 	"github.com/kouji/nvpm/pkg/manage/git"
 	"github.com/kouji/nvpm/pkg/manage/task"
 )
@@ -14,6 +16,7 @@ import (
 type Runner struct {
 	Config   *config.Config
 	Git      *git.Git
+	Builder  *build.Builder
 	Registry *task.Registry
 	Tasks    []*task.Task
 	mu       sync.Mutex
@@ -26,6 +29,7 @@ func NewRunner(cfg *config.Config) *Runner {
 	r := &Runner{
 		Config:   cfg,
 		Git:      git.NewGit(cfg),
+		Builder:  build.NewBuilder(cfg),
 		Registry: task.NewRegistry(),
 		Tasks:    []*task.Task{},
 		sem:      make(chan struct{}, cfg.Performance.Concurrency),
@@ -123,7 +127,14 @@ func (r *Runner) registerTasks() {
 		}
 
 		t.Log("Running build command: %s", t.Plugin.Build)
-		// TODO: Execute build command
+		output, err := r.Builder.Run(t.Plugin)
+		if strings.TrimSpace(output) != "" {
+			t.Log("Build output:\n%s", output)
+		}
+		if err != nil {
+			return err
+		}
+
 		t.Log("Build completed")
 		return nil
 	})

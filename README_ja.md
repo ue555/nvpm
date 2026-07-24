@@ -131,11 +131,22 @@ vim ~/.config/nvpm/plugins.json
   "branch": "main", // Gitブランチ
   "tag": "v1.0.0", // Gitタグ
   "commit": "abc123", // Git コミットハッシュ
-  "build": "make install", // ビルドコマンド
+  "build": "make install", // ビルドコマンド (詳細は下記「ビルドコマンドの実行」参照)
   "config": "require('plugin').setup()", // 設定関数
   "cond": true // 有効条件
 }
 ```
+
+### ビルドコマンドの実行
+
+`build`フィールドは書き方によって2通りに解釈されます。
+
+- **シェルコマンド**（`:`で始まらない文字列）: プラグインのディレクトリ内で`sh -c`実行されます。例: `"make install_jsregexp"`
+- **Neovim Exコマンド**（`:`で始まる文字列）: ヘッドレスかつ独立したNeovimインスタンス（`-u NONE -i NONE`）を起動し、対象プラグイン本体と`dependencies`に指定した依存プラグインだけを`runtimepath`に追加して実行されます。例: `":TSUpdate"`、`":MasonUpdate"`
+
+`-u NONE`は`plugin/`配下スクリプトの自動読み込みも無効化するため、nvpmは`:runtime! plugin/**/*.vim plugin/**/*.lua`を明示的に実行してから対象コマンドを実行します。また、`mason.nvim`の`:MasonUpdate`のように`plugin/`スクリプトではなく`setup()`内でしかコマンドが登録されないプラグインについては、プラグインの`lua/`ディレクトリ構成からモジュール名を推測し、`require(<module>).setup({})`をベストエフォートで先に実行します。
+
+なお、`mason-lspconfig.nvim`の`ensure_installed`のように、プラグイン自身がヘッドレス実行時に自動インストールを意図的にスキップする仕様を持つ場合があります。これはnvpm側で制御できない、プラグイン側の挙動です。
 
 ## 🎯 使い方
 
@@ -166,6 +177,8 @@ nvpm -config ~/.config/nvpm/plugins.json -cmd restore
 # 未使用プラグインを削除
 nvpm -config ~/.config/nvpm/plugins.json -cmd clean
 ```
+
+`clean`は「インストール先ディレクトリ（`~/.local/share/nvim/nvpm/`）には存在するが、現在の`plugins.json`にはもう記載がないプラグイン」を自動検出し、そのディレクトリを削除します（`cache`ディレクトリは対象外）。プラグインを設定ファイルから削除した後にこのコマンドを実行すると、使われなくなったディレクトリを掃除できます。
 
 ### エイリアスの設定（推奨）
 
