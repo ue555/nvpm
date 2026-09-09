@@ -1,3 +1,3 @@
 module github.com/ue555/nvpm
 
-go 1.21
+go 1.27

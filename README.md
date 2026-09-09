@@ -42,6 +42,12 @@ pkg/
 └── util/           # Utilities
 ```
 
+## Requirements
+
+- **Go** 1.27 or later
+- **Git** (for plugin management)
+- **Neovim** 0.8.0+ (recommended 0.9.0+)
+
 ## Installation
 
 ```bash
