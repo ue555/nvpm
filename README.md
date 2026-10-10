@@ -248,7 +248,10 @@ The cache system stores intermediate results to improve performance:
 1. `exists` - Check if plugin exists
 2. `fetch` - Fetch updates from remote
 3. `checkout` - Checkout specific version
-4. `build` - Run build command
+4. `pull` - Fast-forward the current branch; skip pinned commits, tags, and detached HEAD
+5. `build` - Run build command
+
+If a task fails, the remaining tasks for that plugin are skipped and the command returns an error. Other plugins continue processing. The existing lockfile is preserved on failure, even if some plugins were updated successfully.
 
 ### Clean Pipeline
 Before queuing this pipeline, `clean` scans the plugin install directory and

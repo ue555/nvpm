@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kouji/nvpm/pkg/core/config"
-	"github.com/kouji/nvpm/pkg/manage/task"
+	"github.com/ue555/nvpm/pkg/core/config"
+	"github.com/ue555/nvpm/pkg/manage/task"
 )
 
 // setupTestRepo creates a test git repository
