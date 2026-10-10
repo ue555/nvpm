@@ -10,7 +10,7 @@ A modern Neovim plugin manager written in Go.
 
 ## Features
 
-- **Lazy Loading**: Load plugins on-demand based on events, commands, keys, and filetypes
+- **Lazy-loading Framework (incomplete)**: Trigger definitions exist, but Neovim integration must be configured separately (see [Current Limitations](#current-limitations))
 - **Git Management**: Install, update, and manage plugins via Git
 - **Lockfile**: Version pinning and reproducibility with `nvpm-lock.json`
 - **Caching**: Module caching system for fast startup
@@ -55,12 +55,118 @@ pkg/
 git clone https://github.com/ue555/nvpm.git
 cd nvpm
 
-# Install dependencies
+# Prepare Go dependencies (does not install the executable)
 make install
 
 # Build the application
 make build
 ```
+
+`make install` runs `go mod download` and `go mod tidy` only. `make build`
+creates `./bin/nvpm`; use that path from the repository directory. To use
+`nvpm` from another directory, optionally copy the binary to a directory
+on your `PATH` (for example, `~/.local/bin`). This is separate from installing
+Neovim plugins with `-cmd install`.
+
+If `make` is unavailable, build directly with:
+
+```bash
+go build -o bin/nvpm ./cmd/nvpm
+```
+
+## Quick Start: One Plugin in Neovim
+
+After cloning and building above, run these commands from the repository directory.
+This example uses [TokyoNight](https://github.com/folke/tokyonight.nvim), which
+requires Neovim 0.8.0 or later and needs no additional plugin build step.
+
+1. Install the plugin using [examples/plugins-minimal.json](examples/plugins-minimal.json):
+
+   ```bash
+   ./bin/nvpm -config examples/plugins-minimal.json -cmd install
+   ```
+
+   Its configuration is simply `{"plugins": ["folke/tokyonight.nvim"]}`.
+   The plugin is placed in `~/.local/share/nvim/nvpm/tokyonight.nvim`.
+
+2. Start Neovim with the supplied minimal configuration:
+
+   ```bash
+   nvim -u examples/init-minimal.lua
+   ```
+
+   [examples/init-minimal.lua](examples/init-minimal.lua) contains:
+
+   ```lua
+   -- Match nvpm's install directory on Linux and macOS.
+   local nvpm_path = vim.fn.expand("~/.local/share/nvim/nvpm")
+   local plugin_path = nvpm_path .. "/tokyonight.nvim"
+   assert(vim.fn.isdirectory(plugin_path) == 1, "Install tokyonight.nvim with nvpm first")
+   vim.opt.runtimepath:prepend(plugin_path)
+
+   -- Put plugin setup() calls after adding their directories to runtimepath.
+   vim.opt.termguicolors = true
+   require("tokyonight").setup({ style = "night" })
+   vim.cmd("colorscheme tokyonight-night")
+   ```
+
+3. Inside Neovim, run `:colorscheme`. It should display `tokyonight-night`.
+   You can also verify it without opening the UI:
+
+   ```bash
+   nvim --headless -u examples/init-minimal.lua -i NONE \
+     "+lua assert(vim.g.colors_name == 'tokyonight-night'); print('nvpm: OK')" +qa
+   ```
+
+4. To use this on normal startup, merge the Lua example into your `init.lua`.
+   Find its directory using `:echo stdpath('config')` (normally `~/.config/nvim`).
+   Add runtime paths before `require(...).setup()` calls, then restart Neovim.
+   Keep any existing configuration you need.
+
+## Neovim Integration
+
+### Install Paths on Linux and macOS
+
+The CLI currently uses these fixed paths under your home directory:
+
+| Content | Path |
+| --- | --- |
+| Plugins | `~/.local/share/nvim/nvpm/<plugin-name>` |
+| Lockfile | `~/.local/share/nvim/nvpm-lock.json` |
+| Cache | `~/.local/share/nvim/nvpm/cache` |
+
+It does not use Neovim's `stdpath("data")`, `XDG_DATA_HOME`, or `NVIM_APPNAME`
+to choose the install location. On macOS or with customized Neovim paths,
+`vim.fn.stdpath("data") .. "/nvpm"` may therefore point elsewhere. Use
+`vim.fn.expand("~/.local/share/nvim/nvpm")` as in the example above; changing
+Neovim's data directory alone does not move nvpm's plugins. The current CLI
+also does not read a custom `root` from the JSON configuration.
+
+### Loading More Plugins
+
+Add each plugin directory to `runtimepath` in `init.lua`, and append its
+`after/` directory when present. [examples/init.lua](examples/init.lua) shows
+how to add all installed plugin directories, excluding `cache`, followed by
+plugin-specific configuration. Customize it for the plugins you actually use.
+These examples load plugins at startup; they do not implement lazy loading.
+Use a normal Neovim startup after editing `init.lua`, so Neovim can source
+plugin scripts on the configured runtime path.
+
+### Current Limitations
+
+| Setting or feature | Current behavior |
+| --- | --- |
+| Git install/update, branch/tag/commit selection, lockfile | Managed by the CLI; Neovim still needs runtime paths and configuration. |
+| `build` | Runs during install/update. `:` commands run in a separate headless Neovim, not your interactive session. |
+| `lazy`, `event`, `cmd`, `ft`, `keys` | Framework only; the CLI does not create Neovim autocmds, commands, or mappings to load plugins. |
+| `config`, `init` | Lua strings are not executed by the normal loader. Put setup and initialization in your own `init.lua`. |
+| `dependencies` | Does not automatically install dependency repositories. List each required repository in the top-level `plugins` array. |
+
+The current JSON parser also does not normalize arrays for trigger fields or
+`dependencies`, so the array examples below are not working lazy-loading or
+dependency-resolution recipes. Configure loading order, mappings, and any
+on-demand behavior yourself in Neovim. The CLI's `loaded` statistic describes
+its internal state, not plugins loaded in a running Neovim process.
 
 ## Usage
 
@@ -167,11 +273,11 @@ Plugins can be specified as:
 - `url` (string): Git repository URL or GitHub short name
 - `name` (string): Custom plugin name (defaults to repo name)
 - `dir` (string): Custom directory name
-- `lazy` (bool): Enable lazy loading (default: true)
-- `event` ([]string): Events that trigger loading
-- `cmd` ([]string): Commands that trigger loading
-- `ft` ([]string): Filetypes that trigger loading
-- `keys` ([]string): Key mappings that trigger loading
+- `lazy` (bool): Lazy-loading metadata (default: true; Neovim integration incomplete)
+- `event` ([]string): Intended event triggers (not active in Neovim)
+- `cmd` ([]string): Intended command triggers (not active in Neovim)
+- `ft` ([]string): Intended filetype triggers (not active in Neovim)
+- `keys` ([]string): Intended key triggers (not active in Neovim)
 - `dependencies` ([]string): Plugin dependencies
 - `branch` (string): Git branch
 - `tag` (string): Git tag
@@ -182,8 +288,8 @@ Plugins can be specified as:
   directory. A string prefixed with `:` (e.g. `":TSUpdate"`) runs as a Neovim
   Ex command inside an isolated, headless Neovim instance with the plugin
   and its dependencies added to `runtimepath` (see [Build Commands](#build-commands))
-- `config` (string): Configuration function
-- `init` (string): Initialization function (runs before loading)
+- `config` (string): Lua configuration text (not executed by the normal loader)
+- `init` (string): Lua initialization text (not executed by the normal loader)
 - `dev` (bool): Use local development directory
 - `cond` (bool): Condition to enable plugin
 
@@ -206,17 +312,14 @@ make clean
 The system loads plugin specifications from a JSON config file and parses them into internal plugin structures.
 
 ### 2. Plugin Loading
-The loader manages the plugin lifecycle:
-- Runs `init` functions for all plugins
-- Loads start plugins (lazy=false)
-- Sets up lazy-loading handlers for lazy plugins
+The Go loader tracks internal plugin state. Executing `init` and `config`
+Lua strings is not implemented; use the [Neovim integration](#neovim-integration)
+steps to load and configure plugins in your editor.
 
 ### 3. Lazy Loading Handlers
-Four types of handlers trigger plugin loading:
-- **Event Handler**: Loads plugins when specific events occur
-- **Command Handler**: Loads plugins when commands are executed
-- **Filetype Handler**: Loads plugins for specific filetypes
-- **Keys Handler**: Loads plugins when key mappings are pressed
+Event, command, filetype, and key handlers are a conceptual framework.
+They do not register triggers with Neovim or invoke the loader on a trigger.
+See [Current Limitations](#current-limitations).
 
 ### 4. Task Pipeline
 Management operations (install, update, etc.) use task pipelines:

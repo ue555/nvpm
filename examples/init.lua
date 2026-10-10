@@ -2,7 +2,8 @@
 -- このファイルを ~/.config/nvim/init.lua にコピーまたは参照してください
 
 -- nvpmでインストールしたプラグインのパス
-local nvpm_path = vim.fn.stdpath("data") .. "/nvpm"
+-- macOSやXDG設定の変更時もCLIの固定配置先に合わせます。
+local nvpm_path = vim.fn.expand("~/.local/share/nvim/nvpm")
 
 -- nvpmディレクトリが存在するか確認
 if vim.fn.isdirectory(nvpm_path) == 1 then
@@ -10,18 +11,17 @@ if vim.fn.isdirectory(nvpm_path) == 1 then
   local plugins = vim.fn.glob(nvpm_path .. "/*", false, true)
 
   for _, plugin in ipairs(plugins) do
-    -- runtimepathに追加
-    vim.opt.rtp:prepend(plugin)
-
-    -- after/ディレクトリも追加（プラグインによっては必要）
-    local after_dir = plugin .. "/after"
-    if vim.fn.isdirectory(after_dir) == 1 then
-      vim.opt.rtp:append(after_dir)
+    if vim.fn.isdirectory(plugin) == 1 and vim.fn.fnamemodify(plugin, ":t") ~= "cache" then
+      vim.opt.rtp:prepend(plugin)
+      local after_dir = plugin .. "/after"
+      if vim.fn.isdirectory(after_dir) == 1 then
+        vim.opt.rtp:append(after_dir)
+      end
     end
   end
 
-  -- プラグインをロード
-  vim.cmd("packloadall")
+  -- init.luaの後、通常のNeovim起動処理がplugin/を読み込みます。
+  -- 遅延ロードは行いません。最小構成はinit-minimal.luaを参照してください。
 else
   print("nvpm: プラグインディレクトリが見つかりません: " .. nvpm_path)
   print("nvpm -config <設定ファイル> -cmd install を実行してください")

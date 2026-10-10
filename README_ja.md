@@ -13,7 +13,7 @@
 - 📦 シンプルなJSON設定ファイルで全てのプラグインを管理
 - 🚀 Go製の高速な並行処理によるプラグイン操作
 - 💾 Gitパーシャルクローンによる高速インストール
-- 🔌 イベント、コマンド、ファイルタイプ、キーマッピングベースの遅延ロード対応（設定のみ）
+- 🔌 イベント、コマンド、ファイルタイプ、キーマッピングベースの遅延ロードの枠組み（Neovim連携は未実装）
 - 🔒 ロックファイル `nvpm-lock.json` でバージョン管理
 - 💪 非同期タスク実行による高速処理
 - 🛠️ CLIインターフェースによる簡単な操作
@@ -49,17 +49,73 @@ cp bin/nvpm ~/.local/bin/
 ```bash
 git clone https://github.com/ue555/nvpm.git
 cd nvpm
+# Goの依存関係を準備（実行ファイルは配置しません）
+make install
 make build
 
 # バイナリをPATHに追加
 sudo cp bin/nvpm /usr/local/bin/
 ```
 
+`make install` の実体は `go mod download` と `go mod tidy` です。
+実行ファイルを配置する処理ではありません。`make build` 後は、リポジトリ内で
+`./bin/nvpm` を使えます。任意の場所から `nvpm` を使う場合は、上記のように
+バイナリを `PATH` 内へ配置してください。プラグインのインストールは別途
+`-cmd install` で行います。
+
+`make` がない環境では、方法1の `go build -o bin/nvpm ./cmd/nvpm` で直接ビルドできます。
+
 ### インストール確認
 
 ```bash
 nvpm --help
 ```
+
+## 最小構成で動作確認
+
+上記の取得・ビルド後、リポジトリのディレクトリ内で実行します。
+例には [TokyoNight](https://github.com/folke/tokyonight.nvim) を使います。
+Neovim 0.8.0以上が必要で、プラグイン自体の追加ビルドは不要です。
+
+1. [examples/plugins-minimal.json](examples/plugins-minimal.json) でインストールします。
+
+   ```bash
+   ./bin/nvpm -config examples/plugins-minimal.json -cmd install
+   ```
+
+   JSONの内容は `{"plugins": ["folke/tokyonight.nvim"]}` です。
+   `~/.local/share/nvim/nvpm/tokyonight.nvim` に配置されます。
+
+2. 最小設定でNeovimを起動します。
+
+   ```bash
+   nvim -u examples/init-minimal.lua
+   ```
+
+   [examples/init-minimal.lua](examples/init-minimal.lua) は、次の順序で設定します。
+
+   ```lua
+   local nvpm_path = vim.fn.expand("~/.local/share/nvim/nvpm")
+   local plugin_path = nvpm_path .. "/tokyonight.nvim"
+   assert(vim.fn.isdirectory(plugin_path) == 1, "Install tokyonight.nvim with nvpm first")
+   vim.opt.runtimepath:prepend(plugin_path)
+
+   vim.opt.termguicolors = true
+   require("tokyonight").setup({ style = "night" })
+   vim.cmd("colorscheme tokyonight-night")
+   ```
+
+3. Neovimで `:colorscheme` を実行し、`tokyonight-night` と表示されることを確認します。
+   画面を開かずに確認する場合は次を実行します。成功すると `nvpm: OK` と表示されます。
+
+   ```bash
+   nvim --headless -u examples/init-minimal.lua -i NONE \
+     "+lua assert(vim.g.colors_name == 'tokyonight-night'); print('nvpm: OK')" +qa
+   ```
+
+4. 通常起動でも使うには、既存の設定を残しながら上記のLuaを自分の `init.lua` に組み込みます。
+   配置先は `:echo stdpath('config')` で確認できます（通常は `~/.config/nvim`）。
+   `runtimepath` への追加後に各プラグインの `setup()` を書き、Neovimを再起動してください。
 
 ## 📁 ディレクトリ構成
 
@@ -72,6 +128,15 @@ nvpmは以下のディレクトリを使用します：
 │   └── cache/               # キャッシュディレクトリ
 └── nvpm-lock.json           # ロックファイル
 ```
+
+### macOS・カスタムパスでの注意点
+
+現在のCLIは、Linux・macOSともに上記のホームディレクトリ配下へ配置します。
+Neovimの `stdpath("data")`、`XDG_DATA_HOME`、`NVIM_APPNAME` には追従しません。
+そのため環境によっては `vim.fn.stdpath("data") .. "/nvpm"` と実際の配置先が一致しません。
+設定例では `vim.fn.expand("~/.local/share/nvim/nvpm")` を使って実装に合わせています。
+Neovimのデータディレクトリだけを変更しても、nvpmの配置先は変わりません。
+また、現在のCLIはJSONの `root` 指定を読み取りません。
 
 ## ⚙️ 設定
 
@@ -124,11 +189,14 @@ vim ~/.config/nvpm/plugins.json
 
 #### 詳細な設定
 
-```json
+以下は説明用のコメント付き例です。実際のJSONファイルではコメントを除去してください。
+遅延ロードや `config` の実行状況は下記「現在の実装状況」を参照してください。
+
+```jsonc
 {
   "url": "hrsh7th/nvim-cmp", // GitHubリポジトリ (必須)
   "name": "nvim-cmp", // プラグイン名 (オプション)
-  "lazy": true, // 遅延ロード有効化 (デフォルト: true)
+  "lazy": true, // 遅延ロードのメタデータ (Neovim連携は未実装)
   "event": ["InsertEnter"], // イベントトリガー
   "cmd": ["CmpStatus"], // コマンドトリガー
   "ft": ["lua", "vim"], // ファイルタイプトリガー
@@ -138,10 +206,25 @@ vim ~/.config/nvpm/plugins.json
   "tag": "v1.0.0", // Gitタグ
   "commit": "abc123", // Git コミットハッシュ
   "build": "make install", // ビルドコマンド (詳細は下記「ビルドコマンドの実行」参照)
-  "config": "require('plugin').setup()", // 設定関数
+  "config": "require('plugin').setup()", // Lua設定文字列 (通常のロード処理では実行されません)
   "cond": true // 有効条件
 }
 ```
+
+### 現在の実装状況
+
+| 項目 | 動作 |
+| --- | --- |
+| Gitによる取得・更新、branch/tag/commit固定、ロックファイル | CLIで管理します。Neovim側での読み込み設定は別途必要です。 |
+| `build` | install/update時に実行します。`:` コマンドは別プロセスのヘッドレスNeovimで実行します。 |
+| `lazy`・`event`・`cmd`・`ft`・`keys` | 枠組みのみです。Neovimに遅延ロード用のイベント・コマンド・マッピングは登録されません。 |
+| `config`・`init` | 通常のロード処理ではLua文字列を実行しません。自分の `init.lua` に設定を書いてください。 |
+| `dependencies` | 依存先を自動インストールしません。必要なリポジトリをトップレベルの `plugins` にも列挙してください。 |
+
+現在のJSONパーサーは、トリガー項目と `dependencies` の配列の変換にも未対応です。
+配列を記述した設定例だけでは、遅延ロードや依存解決は完成しません。
+読み込み順序、キーマッピング、必要な遅延ロードはNeovim側で設定してください。
+CLIの `loaded` 表示は内部状態であり、起動中のNeovimでの読み込みを表すものではありません。
 
 ### ビルドコマンドの実行
 
@@ -215,13 +298,18 @@ nvpm-sync     # 同期
 
 ```lua
 -- nvpmでインストールしたプラグインをruntimepathに追加
-local nvpm_path = vim.fn.stdpath("data") .. "/nvpm"
+local nvpm_path = vim.fn.expand("~/.local/share/nvim/nvpm")
 
 -- nvpmディレクトリ内の全プラグインを検索
 local plugins = vim.fn.glob(nvpm_path .. "/*", false, true)
 
 for _, plugin in ipairs(plugins) do
-  vim.opt.rtp:append(plugin)
+  if vim.fn.isdirectory(plugin) == 1 and vim.fn.fnamemodify(plugin, ":t") ~= "cache" then
+    vim.opt.rtp:prepend(plugin)
+    if vim.fn.isdirectory(plugin .. "/after") == 1 then
+      vim.opt.rtp:append(plugin .. "/after")
+    end
+  end
 end
 
 -- プラグインの設定をここに記述
@@ -230,9 +318,13 @@ end
 -- vim.cmd[[colorscheme tokyonight]]
 ```
 
+この例は起動時に全プラグインを読み込む構成です。遅延ロードは行いません。
+設定変更後はNeovimを再起動し、通常の起動処理で `plugin/` スクリプトを読み込ませます。
+[examples/init.lua](examples/init.lua) にも複数プラグイン用の例があります。
+
 ### 方法2: 自動起動スクリプト
 
-より便利に使うために、Neovim起動前にnvpmを実行するスクリプトを作成：
+Neovim起動前にnvpmを実行するスクリプトも使えます。これは取得処理の補助であり、方法1の `init.lua` 設定も必要です：
 
 ```bash
 #!/bin/bash
@@ -289,10 +381,15 @@ nvim
 
 ```lua
 -- ~/.config/nvim/init.lua
-local nvpm_path = vim.fn.stdpath("data") .. "/nvpm"
+local nvpm_path = vim.fn.expand("~/.local/share/nvim/nvpm")
 local plugins = vim.fn.glob(nvpm_path .. "/*", false, true)
 for _, plugin in ipairs(plugins) do
-  vim.opt.rtp:append(plugin)
+  if vim.fn.isdirectory(plugin) == 1 and vim.fn.fnamemodify(plugin, ":t") ~= "cache" then
+    vim.opt.rtp:prepend(plugin)
+    if vim.fn.isdirectory(plugin .. "/after") == 1 then
+      vim.opt.rtp:append(plugin .. "/after")
+    end
+  end
 end
 
 -- カラースキームを適用
@@ -327,10 +424,15 @@ nvpm -config lsp-plugins.json -cmd install
 
 ```lua
 -- ~/.config/nvim/init.lua
-local nvpm_path = vim.fn.stdpath("data") .. "/nvpm"
+local nvpm_path = vim.fn.expand("~/.local/share/nvim/nvpm")
 local plugins = vim.fn.glob(nvpm_path .. "/*", false, true)
 for _, plugin in ipairs(plugins) do
-  vim.opt.rtp:append(plugin)
+  if vim.fn.isdirectory(plugin) == 1 and vim.fn.fnamemodify(plugin, ":t") ~= "cache" then
+    vim.opt.rtp:prepend(plugin)
+    if vim.fn.isdirectory(plugin .. "/after") == 1 then
+      vim.opt.rtp:append(plugin .. "/after")
+    end
+  end
 end
 
 -- LSP設定
@@ -554,7 +656,7 @@ A: Goがクロスプラットフォーム対応なので、Windows用にビル�
 
 ### Q: プラグインの遅延ロードは自動的に機能しますか？
 
-A: nvpmは遅延ロード設定を記録しますが、実際の遅延ロードはNeovim側で設定する必要があります。nvpmはプラグイン管理に特化したツールです。
+A: 自動では機能しません。ハンドラーとNeovimの連携は未実装で、`config`・`init` のLua実行も未対応です。読み込みと設定は `init.lua` に記述してください。上記「現在の実装状況」を参照してください。
 
 ## 🤝 貢献
 
