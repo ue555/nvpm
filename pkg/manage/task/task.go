@@ -78,6 +78,7 @@ func (t *Task) SetError(err error) {
 	defer t.mu.Unlock()
 	t.Error = err
 	t.Status = StatusFailed
+	t.FinishAt = time.Now()
 }
 
 // AddOutput adds output to the task
@@ -138,6 +139,7 @@ var (
 			"exists",
 			"fetch",
 			"checkout",
+			"pull",
 			"build",
 		},
 	}
@@ -202,7 +204,16 @@ func (r *Registry) Execute(task *Task) error {
 		return err
 	}
 
-	task.SetStatus(StatusSuccess)
-	task.Log("Task completed successfully")
+	// Only set success if not already skipped
+	// Tasks can set their own status to Skipped during execution
+	task.mu.Lock()
+	if task.Status != StatusSkipped {
+		task.Status = StatusSuccess
+		task.FinishAt = time.Now()
+	}
+	status := task.Status
+	task.mu.Unlock()
+
+	task.Log("Task completed: %s", status)
 	return nil
 }

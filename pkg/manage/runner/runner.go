@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -140,6 +141,39 @@ func (r *Runner) registerTasks() {
 		return nil
 	})
 
+	// Pull task - pull updates from remote
+	r.Registry.Register("pull", func(t *task.Task) error {
+		if !t.Plugin.Installed {
+			return fmt.Errorf("plugin not installed")
+		}
+
+		// Only pull if on a branch (not detached HEAD)
+		currentBranch, err := r.Git.GetCurrentBranch(t.Plugin)
+		if err != nil {
+			return fmt.Errorf("failed to determine current branch: %w", err)
+		}
+		if currentBranch == "HEAD" {
+			t.SetStatus(task.StatusSkipped)
+			t.Log("Not on a branch (detached HEAD), skipping pull")
+			return nil
+		}
+
+		// For commits or tags, skip pull
+		if t.Plugin.Commit != "" || t.Plugin.Tag != "" {
+			t.SetStatus(task.StatusSkipped)
+			t.Log("Specific commit/tag version, skipping pull")
+			return nil
+		}
+
+		t.Log("Pulling updates for branch: %s", currentBranch)
+		if err := r.Git.Pull(t.Plugin); err != nil {
+			return fmt.Errorf("failed to pull: %w", err)
+		}
+
+		t.Log("Successfully pulled updates")
+		return nil
+	})
+
 	// Check updates task - check for available updates
 	r.Registry.Register("check_updates", func(t *task.Task) error {
 		if !t.Plugin.Installed {
@@ -189,6 +223,9 @@ func (r *Runner) Start() error {
 		pluginTasks[t.Plugin.Name] = append(pluginTasks[t.Plugin.Name], t)
 	}
 
+	// Channel to collect errors from goroutines
+	errChan := make(chan error, len(pluginTasks))
+
 	// Execute tasks for each plugin in parallel
 	for pluginName, tasks := range pluginTasks {
 		r.wg.Add(1)
@@ -202,10 +239,17 @@ func (r *Runner) Start() error {
 			log.Printf("Processing plugin: %s (%d tasks)\n", name, len(tasks))
 
 			// Execute tasks sequentially for this plugin
-			for _, t := range tasks {
+			for i, t := range tasks {
 				if err := r.Registry.Execute(t); err != nil {
 					log.Printf("Task %s failed for %s: %v\n", t.Name, name, err)
-					// Continue with other tasks even if one fails
+					// Send error to channel
+					errChan <- fmt.Errorf("task %s failed for %s: %w", t.Name, name, err)
+					// Finalize tasks that cannot run after this failure.
+					for _, remaining := range tasks[i+1:] {
+						remaining.SetStatus(task.StatusSkipped)
+						remaining.Log("Skipped because task %s failed", t.Name)
+					}
+					break
 				}
 			}
 
@@ -215,8 +259,21 @@ func (r *Runner) Start() error {
 
 	// Wait for all tasks to complete
 	r.wg.Wait()
+	close(errChan)
+
+	// Collect all errors
+	var taskErrors []error
+	for err := range errChan {
+		taskErrors = append(taskErrors, err)
+	}
 
 	log.Println("Runner completed")
+
+	// Return error if any tasks failed
+	if len(taskErrors) > 0 {
+		return fmt.Errorf("runner completed with %d error(s): %w", len(taskErrors), errors.Join(taskErrors...))
+	}
+
 	return nil
 }
 

@@ -45,13 +45,14 @@ func (m *Manager) Install(plugins ...*config.Plugin) error {
 		r.QueuePipeline(plugin, task.InstallPipeline)
 	}
 
-	// Execute tasks
-	if err := r.Start(); err != nil {
-		return err
-	}
-
-	// Print results
+	// Report all results, including partial failures.
+	runErr := r.Start()
 	m.printResults(r)
+	if runErr != nil {
+		// Preserve the last lockfile as a restore point after partial failure.
+		log.Println("Operation failed; lockfile unchanged. Some plugin directories may have changed; retry or restore to the locked versions.")
+		return runErr
+	}
 
 	// Update lockfile
 	if err := m.LockManager.Update(); err != nil {
@@ -87,13 +88,14 @@ func (m *Manager) Update(plugins ...*config.Plugin) error {
 		r.QueuePipeline(plugin, task.UpdatePipeline)
 	}
 
-	// Execute tasks
-	if err := r.Start(); err != nil {
-		return err
-	}
-
-	// Print results
+	// Report all results, including partial failures.
+	runErr := r.Start()
 	m.printResults(r)
+	if runErr != nil {
+		// Preserve the last lockfile as a restore point after partial failure.
+		log.Println("Operation failed; lockfile unchanged. Some plugin directories may have changed; retry or restore to the locked versions.")
+		return runErr
+	}
 
 	// Update lockfile
 	if err := m.LockManager.Update(); err != nil {
@@ -122,13 +124,12 @@ func (m *Manager) Clean() error {
 		}
 	}
 
-	// Execute tasks
-	if err := r.Start(); err != nil {
-		return err
-	}
-
-	// Print results
+	// Report all results, including partial failures.
+	runErr := r.Start()
 	m.printResults(r)
+	if runErr != nil {
+		return runErr
+	}
 
 	// Update lockfile
 	for _, name := range m.Config.ToClean {
@@ -182,13 +183,12 @@ func (m *Manager) Check() error {
 		}
 	}
 
-	// Execute tasks
-	if err := r.Start(); err != nil {
-		return err
-	}
-
-	// Print results
+	// Report all results, including partial failures.
+	runErr := r.Start()
 	m.printResults(r)
+	if runErr != nil {
+		return runErr
+	}
 
 	log.Println("Check operation completed")
 	return nil
